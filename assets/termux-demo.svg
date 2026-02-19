@@ -13,7 +13,7 @@
   <circle cx="146" cy="92" r="7" fill="#22c55e"/>
   <text x="178" y="98" fill="#93c5fd" font-family="monospace" font-size="18">Termux - UDEV Gothic Installer</text>
 
-  <text x="98" y="160" fill="#86efac" font-family="monospace" font-size="22">$ ./install-udevgothic-termux.sh</text>
+  <text x="98" y="160" fill="#86efac" font-family="monospace" font-size="22">$ ./udevg-termux.sh</text>
   <text x="98" y="198" fill="#cbd5e1" font-family="monospace" font-size="20">[*] Fetching latest release metadata...</text>
   <text x="98" y="236" fill="#cbd5e1" font-family="monospace" font-size="20">Available variants:</text>
   <text x="98" y="272" fill="#cbd5e1" font-family="monospace" font-size="20">  1) HS</text>

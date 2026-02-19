@@ -15,26 +15,26 @@ Termux に UDEV Gothic を入れて `~/.termux/font.ttf` へ反映するイン�
 
 ```bash
 pkg install -y curl unzip findutils
-curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/install-udevgothic-termux.sh | bash -s
+curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s
 ```
 
 非対話で一発適用する場合:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/install-udevgothic-termux.sh | bash -s -- --preset nf --yes
+curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s -- --preset nf --yes
 ```
 
 ローカル実行:
 
 ```bash
-chmod +x install-udevgothic-termux.sh
-./install-udevgothic-termux.sh
+chmod +x udevg-termux.sh
+./udevg-termux.sh
 ```
 
 ## Options
 
 ```bash
-./install-udevgothic-termux.sh [options]
+./udevg-termux.sh [options]
 ```
 
 - `-f, --font NAME` font file name を直接指定（完全一致 or 一意の部分一致）
@@ -46,10 +46,10 @@ chmod +x install-udevgothic-termux.sh
 ## Preset Examples
 
 ```bash
-./install-udevgothic-termux.sh --preset nf --yes
-./install-udevgothic-termux.sh --preset nflg --yes
-./install-udevgothic-termux.sh --preset 35nflg-bold --yes
-./install-udevgothic-termux.sh --preset hs --yes
+./udevg-termux.sh --preset nf --yes
+./udevg-termux.sh --preset nflg --yes
+./udevg-termux.sh --preset 35nflg-bold --yes
+./udevg-termux.sh --preset hs --yes
 ```
 
 ## Cache
