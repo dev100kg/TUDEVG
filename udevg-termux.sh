@@ -326,7 +326,7 @@ download_zip_with_cache() {
   if [ ! -s "$cache_path" ]; then
     tmp_path="${cache_path}.tmp.$$"
     log "Downloading: ${url}"
-    if ! curl -fL --proto '=https' --tlsv1.2 --retry 3 --retry-delay 1 -o "$tmp_path" "$url"; then
+    if ! curl -fsSL --proto '=https' --tlsv1.2 --retry 3 --retry-delay 1 -o "$tmp_path" "$url"; then
       rm -f "$tmp_path"
       return 1
     fi
