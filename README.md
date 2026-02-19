@@ -1,67 +1,109 @@
 # UDEV Gothic Installer for Termux
 
-Termux に UDEV Gothic を入れて `~/.termux/font.ttf` へ反映するインストーラです。
+Termux に UDEV Gothic をインストールし、`~/.termux/font.ttf` に適用するスクリプトです。
 
 ![Demo Screenshot](assets/termux-demo.svg)
 
-## Features
+## このスクリプトでできること
 
-- Latest release を自動取得
-- 必要な依存関係が不足していれば自動インストール（Termux）
-- ダウンロード URL を `yuru7/udev-gothic` の release asset に限定
-- release metadata に SHA256 digest がある場合は ZIP を検証（既定で有効）
-- 対話モードで variant/family/size/width/style を選択
+- `yuru7/udev-gothic` の最新リリース ZIP を自動取得
+- Termux で不足している依存コマンドを自動インストール
+- SHA256 digest が取得できる場合は ZIP を検証（デフォルト有効）
+- 対話形式でフォントを選択（family/size/width/style）
 - `--preset` で一発指定（例: `nf`, `35nflg-bold`）
-- ZIP キャッシュ対応（`~/.cache/udevgothic`）
+- ダウンロード済み ZIP をキャッシュ再利用（`~/.cache/udevgothic`）
 
-## Quick Start
+## まず使う（最短）
 
-対話インストール
+推奨:
+
+```bash
+curl -fsSLo /tmp/udevg-termux.sh https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh
+bash /tmp/udevg-termux.sh
+```
+
+簡易ワンライナー（`curl | bash`）:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s
 ```
 
-非対話インストール例
+## 目的別の使い方
+
+非対話で即適用したい:
+
+```bash
+bash /tmp/udevg-termux.sh --preset nf --yes
+```
+
+`curl | bash` で非対話実行:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s -- --preset nf --yes
 ```
 
-## Options
+利用可能なパッケージや preset 例を確認したい:
+
+```bash
+bash /tmp/udevg-termux.sh --list
+```
+
+特定のフォント名を直接指定したい:
+
+```bash
+bash /tmp/udevg-termux.sh --font UDEVGothic35HS-Regular.ttf --yes
+```
+
+ローカルのスクリプトを実行する:
+
+```bash
+chmod +x udevg-termux.sh
+./udevg-termux.sh
+```
+
+## preset の書き方
+
+基本形:
+
+`[35][nf|hs][lg][-bold|-italic|-bolditalic]`
+
+例:
+
+- `nf`
+- `nflg`
+- `35nf`
+- `35nflg-bold`
+- `hs`
+- `35hslg-italic`
+
+## オプション
 
 ```bash
 ./udevg-termux.sh [options]
 ```
 
-- `-f, --font NAME` font file name を直接指定（完全一致 or 一意の部分一致）
-- `-p, --preset PRESET` preset 指定（例: `nf`, `nflg`, `35nf`, `35nflg-bold`, `hs`）
-- `-l, --list` 利用可能 package と preset 例を表示
-- `-y, --yes` 確認プロンプトをスキップ
-- `--no-verify` SHA256 検証をスキップ（非推奨）
-- `--require-verify` SHA256 digest が取得できない場合はエラー終了
-- `-h, --help` ヘルプ表示
+- `-f, --font NAME`: フォントファイル名を直接指定（完全一致、または一意の部分一致）
+- `-p, --preset PRESET`: preset 指定（例: `nf`, `35nflg-bold`）
+- `-l, --list`: 利用可能 package と preset 例を表示して終了
+- `-y, --yes`: 確認プロンプトをスキップ
+- `--no-verify`: SHA256 検証をスキップ（非推奨）
+- `--require-verify`: digest が取得できない場合はエラー終了
+- `-h, --help`: ヘルプ表示
 
-## Preset Examples
+## 補足
 
-```bash
-./udevg-termux.sh --preset nf --yes
-./udevg-termux.sh --preset nflg --yes
-./udevg-termux.sh --preset 35nflg-bold --yes
-./udevg-termux.sh --preset hs --yes
-```
+- `--font` と `--preset` を同時指定した場合は `--font` が優先されます。
+- 非対話環境では `--yes` がないと確認入力で停止します。
+- digest が無いアセットは警告して続行します（`--require-verify` で失敗させることも可能）。
+- 適用後は `termux-reload-settings` があれば自動実行、なければ Termux 再起動で反映されます。
 
-## Cache
+## キャッシュ
 
-- Cache dir: `~/.cache/udevgothic`
+- 保存先: `~/.cache/udevgothic`
 - 同じ ZIP は再ダウンロードせず再利用
+
+キャッシュ削除:
 
 ```bash
 rm -rf ~/.cache/udevgothic
 ```
-
-## Notes
-
-- `--font` と `--preset` を同時指定した場合は `--font` を優先
-- 非対話実行時は `--yes` 推奨
-- GitHub metadata に digest が無いアセットは、警告のうえ検証なしで続行（`--require-verify` で厳格化）
