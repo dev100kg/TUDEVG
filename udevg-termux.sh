@@ -17,6 +17,7 @@ PRESET_SPECIFIED=0
 LIST_ONLY=0
 FORCE=0
 SKIP_VERIFY=0
+REQUIRE_VERIFY=0
 TMP_DIR=""
 
 usage() {
@@ -29,6 +30,7 @@ Options:
   -l, --list           Show available packages/presets and exit
   -y, --yes            Skip confirmation prompt
       --no-verify      Skip SHA256 verification (not recommended)
+      --require-verify Fail if SHA256 digest is unavailable
   -h, --help           Show this help
 
 Examples:
@@ -162,6 +164,10 @@ parse_args() {
         ;;
       --no-verify)
         SKIP_VERIFY=1
+        shift
+        ;;
+      --require-verify)
+        REQUIRE_VERIFY=1
         shift
         ;;
       -h|--help)
@@ -305,17 +311,11 @@ download_zip_with_cache() {
   chmod 700 "$CACHE_DIR" 2>/dev/null || true
   cache_path="${CACHE_DIR}/$(zip_name_from_url "$url")"
 
-  if [ "$SKIP_VERIFY" -ne 1 ] && [ -z "$expected_sha256" ]; then
-    echo "Error: No SHA256 digest available for selected asset." >&2
-    echo "If you still want to proceed, re-run with --no-verify." >&2
-    return 1
-  fi
-
   if [ -s "$cache_path" ]; then
     if ! unzip -tqq "$cache_path" >/dev/null 2>&1; then
       echo "Warning: Invalid cache detected. Re-downloading: ${cache_path}" >&2
       rm -f "$cache_path"
-    elif [ "$SKIP_VERIFY" -ne 1 ] && ! verify_file_sha256 "$cache_path" "$expected_sha256"; then
+    elif [ -n "$expected_sha256" ] && [ "$SKIP_VERIFY" -ne 1 ] && ! verify_file_sha256 "$cache_path" "$expected_sha256"; then
       echo "Warning: Cache SHA256 mismatch. Re-downloading: ${cache_path}" >&2
       rm -f "$cache_path"
     else
@@ -337,7 +337,7 @@ download_zip_with_cache() {
       return 1
     fi
 
-    if [ "$SKIP_VERIFY" -ne 1 ] && ! verify_file_sha256 "$tmp_path" "$expected_sha256"; then
+    if [ -n "$expected_sha256" ] && [ "$SKIP_VERIFY" -ne 1 ] && ! verify_file_sha256 "$tmp_path" "$expected_sha256"; then
       rm -f "$tmp_path"
       echo "Error: SHA256 verification failed for downloaded asset." >&2
       return 1
@@ -878,6 +878,10 @@ main() {
   if [ "$SKIP_VERIFY" -eq 1 ]; then
     echo "Warning: SHA256 verification is disabled (--no-verify)." >&2
   fi
+  if [ "$SKIP_VERIFY" -eq 1 ] && [ "$REQUIRE_VERIFY" -eq 1 ]; then
+    echo "Error: --no-verify and --require-verify cannot be used together." >&2
+    exit 1
+  fi
 
   if [ "$FONT_SPECIFIED" -eq 1 ] && [ "$PRESET_SPECIFIED" -eq 1 ]; then
     echo "Warning: --font is set, so --preset is ignored." >&2
@@ -943,9 +947,12 @@ main() {
   if [ "$SKIP_VERIFY" -ne 1 ]; then
     expected_sha256="$(sha256_for_asset_url "$metadata" "$zip_url" || true)"
     if [ -z "$expected_sha256" ]; then
-      echo "Error: Could not get SHA256 digest for selected asset from release metadata." >&2
-      echo "Re-run with --no-verify to bypass verification." >&2
-      exit 1
+      if [ "$REQUIRE_VERIFY" -eq 1 ]; then
+        echo "Error: Could not get SHA256 digest for selected asset from release metadata." >&2
+        exit 1
+      fi
+      echo "Warning: Could not get SHA256 digest for selected asset from release metadata." >&2
+      echo "Warning: Continuing without SHA256 verification. Use --require-verify to fail instead." >&2
     fi
   fi
 

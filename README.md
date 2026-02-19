@@ -9,7 +9,7 @@ Termux に UDEV Gothic を入れて `~/.termux/font.ttf` へ反映するイン�
 - Latest release を自動取得
 - 必要な依存関係が不足していれば自動インストール（Termux）
 - ダウンロード URL を `yuru7/udev-gothic` の release asset に限定
-- release metadata の SHA256 digest で ZIP を検証（既定で有効）
+- release metadata に SHA256 digest がある場合は ZIP を検証（既定で有効）
 - 対話モードで variant/family/size/width/style を選択
 - `--preset` で一発指定（例: `nf`, `35nflg-bold`）
 - ZIP キャッシュ対応（`~/.cache/udevgothic`）
@@ -51,6 +51,7 @@ chmod +x udevg-termux.sh
 - `-l, --list` 利用可能 package と preset 例を表示
 - `-y, --yes` 確認プロンプトをスキップ
 - `--no-verify` SHA256 検証をスキップ（非推奨）
+- `--require-verify` SHA256 digest が取得できない場合はエラー終了
 - `-h, --help` ヘルプ表示
 
 ## Preset Examples
@@ -75,3 +76,4 @@ rm -rf ~/.cache/udevgothic
 
 - `--font` と `--preset` を同時指定した場合は `--font` を優先
 - 非対話実行時は `--yes` 推奨
+- GitHub metadata に digest が無いアセットは、警告のうえ検証なしで続行（`--require-verify` で厳格化）
