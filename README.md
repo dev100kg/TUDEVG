@@ -15,6 +15,12 @@ Termux に UDEV Gothic を入れて `~/.termux/font.ttf` へ反映するイン�
 
 ```bash
 pkg install -y curl unzip findutils
+curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/install-udevgothic-termux.sh | bash -s
+```
+
+非対話で一発適用する場合:
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/install-udevgothic-termux.sh | bash -s -- --preset nf --yes
 ```
 
