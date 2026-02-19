@@ -7,6 +7,7 @@ Termux に UDEV Gothic を入れて `~/.termux/font.ttf` へ反映するイン�
 ## Features
 
 - Latest release を自動取得
+- 必要な依存関係が不足していれば自動インストール（Termux）
 - ダウンロード URL を `yuru7/udev-gothic` の release asset に限定
 - release metadata の SHA256 digest で ZIP を検証（既定で有効）
 - 対話モードで variant/family/size/width/style を選択
@@ -16,7 +17,6 @@ Termux に UDEV Gothic を入れて `~/.termux/font.ttf` へ反映するイン�
 ## Quick Start
 
 ```bash
-pkg install -y curl unzip findutils jq coreutils
 curl -fsSLo /tmp/udevg-termux.sh https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh
 bash /tmp/udevg-termux.sh
 ```

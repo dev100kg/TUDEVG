@@ -43,16 +43,81 @@ Cache:
 USAGE
 }
 
-require_cmd() {
-  local cmd="$1"
-  if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: '$cmd' is required. Install it first." >&2
-    exit 1
-  fi
-}
-
 log() {
   printf '[*] %s\n' "$*"
+}
+
+is_termux_env() {
+  [ -d "/data/data/com.termux/files/usr" ]
+}
+
+in_list() {
+  local needle="$1"
+  shift
+  local item
+  for item in "$@"; do
+    [ "$item" = "$needle" ] && return 0
+  done
+  return 1
+}
+
+termux_package_for_cmd() {
+  case "$1" in
+    curl) printf '%s\n' 'curl' ;;
+    jq) printf '%s\n' 'jq' ;;
+    unzip) printf '%s\n' 'unzip' ;;
+    find) printf '%s\n' 'findutils' ;;
+    sha256sum|install) printf '%s\n' 'coreutils' ;;
+    *) return 1 ;;
+  esac
+}
+
+ensure_dependencies() {
+  local required_cmds=("curl" "jq" "sha256sum" "unzip" "find" "install")
+  local missing_cmds=()
+  local cmd
+  local pkg_name
+  local packages_to_install=()
+
+  for cmd in "${required_cmds[@]}"; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      missing_cmds+=("$cmd")
+    fi
+  done
+
+  [ "${#missing_cmds[@]}" -eq 0 ] && return 0
+
+  if is_termux_env && command -v pkg >/dev/null 2>&1; then
+    for cmd in "${missing_cmds[@]}"; do
+      pkg_name="$(termux_package_for_cmd "$cmd" || true)"
+      if [ -z "$pkg_name" ]; then
+        echo "Error: Missing dependency '$cmd', but no package mapping was found." >&2
+        return 1
+      fi
+      if ! in_list "$pkg_name" "${packages_to_install[@]}"; then
+        packages_to_install+=("$pkg_name")
+      fi
+    done
+
+    log "Missing dependencies detected: ${missing_cmds[*]}"
+    log "Installing packages: ${packages_to_install[*]}"
+    if ! pkg install -y "${packages_to_install[@]}"; then
+      echo "Error: Failed to install dependencies via pkg." >&2
+      return 1
+    fi
+
+    for cmd in "${missing_cmds[@]}"; do
+      if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "Error: Dependency '$cmd' is still missing after installation." >&2
+        return 1
+      fi
+    done
+    return 0
+  fi
+
+  echo "Error: Missing required dependencies: ${missing_cmds[*]}" >&2
+  echo "Install them manually and re-run this script." >&2
+  return 1
 }
 
 confirm() {
@@ -804,13 +869,9 @@ parse_preset_preferences() {
 main() {
   parse_args "$@"
 
-  require_cmd curl
-  require_cmd jq
-  require_cmd sha256sum
-  require_cmd unzip
-  require_cmd find
+  ensure_dependencies
 
-  if [ ! -d "/data/data/com.termux/files/usr" ]; then
+  if ! is_termux_env; then
     echo "Warning: This does not look like Termux. Continuing anyway." >&2
   fi
 
