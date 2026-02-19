@@ -8,7 +8,7 @@ Termux に UDEV Gothic をインストールし、`~/.termux/font.ttf` に適用
 
 - `yuru7/udev-gothic` の最新リリース ZIP を自動取得
 - Termux で不足している依存コマンドを自動インストール
-- SHA256 digest が取得できる場合は ZIP を検証（デフォルト有効）
+- ダウンロードした ZIP の形式を検証してから展開
 - 対話形式でフォントを選択（family/size/width/style）
 - `--preset` で一発指定（例: `nf`, `35nflg-bold`）
 - ダウンロード済み ZIP をキャッシュ再利用（`~/.cache/udevgothic`）
@@ -58,15 +58,12 @@ curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.s
 - `-p, --preset PRESET`: preset 指定（例: `nf`, `35nflg-bold`）
 - `-l, --list`: 利用可能 package と preset 例を表示して終了
 - `-y, --yes`: 確認プロンプトをスキップ
-- `--no-verify`: SHA256 検証をスキップ（非推奨）
-- `--require-verify`: digest が取得できない場合はエラー終了
 - `-h, --help`: ヘルプ表示
 
 ## 補足
 
 - `--font` と `--preset` を同時指定した場合は `--font` が優先されます。
 - 非対話環境では `--yes` がないと確認入力で停止します。
-- digest が無いアセットは警告して続行します（`--require-verify` で失敗させることも可能）。
 - 適用後は `termux-reload-settings` があれば自動実行、なければ Termux 再起動で反映されます。
 
 ## キャッシュ
