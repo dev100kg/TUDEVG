@@ -4,16 +4,19 @@ set -euo pipefail
 REPO_OWNER="yuru7"
 REPO_NAME="udev-gothic"
 API_URL="https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest"
+TRUSTED_ASSET_PREFIX="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/"
 TARGET_DIR="${HOME}/.termux"
 TARGET_FONT="${TARGET_DIR}/font.ttf"
 CACHE_DIR="${HOME}/.cache/udevgothic"
 DEFAULT_FONT_NAME="UDEVGothicNF-Regular.ttf"
+MAX_UNCOMPRESSED_BYTES=$((512 * 1024 * 1024))
 FONT_NAME=""
 FONT_SPECIFIED=0
 PRESET=""
 PRESET_SPECIFIED=0
 LIST_ONLY=0
 FORCE=0
+SKIP_VERIFY=0
 TMP_DIR=""
 
 usage() {
@@ -25,6 +28,7 @@ Options:
   -p, --preset PRESET  Short preset (e.g. nf, nflg, 35nf, 35nflg, hs)
   -l, --list           Show available packages/presets and exit
   -y, --yes            Skip confirmation prompt
+      --no-verify      Skip SHA256 verification (not recommended)
   -h, --help           Show this help
 
 Examples:
@@ -32,7 +36,7 @@ Examples:
   $0 --preset nf
   $0 --preset 35nflg-bold
   $0 --font UDEVGothic35HS-Regular.ttf
-  curl -fsSL <raw-script-url> | bash -s -- --preset nf --yes
+  curl -fsSLo /tmp/udevg-termux.sh <raw-script-url> && bash /tmp/udevg-termux.sh --preset nf --yes
 
 Cache:
   Downloaded zip files are cached in: ${CACHE_DIR}
@@ -42,7 +46,7 @@ USAGE
 require_cmd() {
   local cmd="$1"
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: '$cmd' is required. Install it with: pkg install $cmd" >&2
+    echo "Error: '$cmd' is required. Install it first." >&2
     exit 1
   fi
 }
@@ -91,6 +95,10 @@ parse_args() {
         FORCE=1
         shift
         ;;
+      --no-verify)
+        SKIP_VERIFY=1
+        shift
+        ;;
       -h|--help)
         usage
         exit 0
@@ -119,35 +127,159 @@ normalize_text() {
 collect_zip_urls_from_metadata() {
   local metadata="$1"
   printf '%s\n' "$metadata" \
-    | grep -Eo '"browser_download_url"[[:space:]]*:[[:space:]]*"[^"]+\.zip"' \
-    | sed -E 's/.*"([^"]+)"/\1/' \
+    | jq -r '.assets[]? | select((.browser_download_url // "") | test("\\.zip$")) | .browser_download_url' \
     | sort -u
+}
+
+is_trusted_asset_url() {
+  local url="$1"
+  case "$url" in
+    "${TRUSTED_ASSET_PREFIX}"*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+validate_zip_urls() {
+  local urls="$1"
+  local url
+
+  while IFS= read -r url; do
+    [ -z "$url" ] && continue
+    if ! is_trusted_asset_url "$url"; then
+      echo "Error: Untrusted asset URL in release metadata: $url" >&2
+      return 1
+    fi
+  done <<EOF_URLS
+$urls
+EOF_URLS
+}
+
+sha256_from_digest() {
+  local digest="$1"
+  local hash
+
+  case "$digest" in
+    sha256:*) hash="${digest#sha256:}" ;;
+    *) return 1 ;;
+  esac
+
+  hash="$(printf '%s' "$hash" | tr '[:upper:]' '[:lower:]')"
+  if ! printf '%s' "$hash" | grep -Eq '^[0-9a-f]{64}$'; then
+    return 1
+  fi
+
+  printf '%s\n' "$hash"
+}
+
+sha256_for_asset_url() {
+  local metadata="$1"
+  local url="$2"
+  local digest
+  local hash
+
+  digest="$(printf '%s\n' "$metadata" \
+    | jq -r --arg url "$url" '.assets[]? | select(.browser_download_url == $url) | (.digest // empty)' \
+    | head -n1)"
+
+  [ -z "$digest" ] && return 1
+  hash="$(sha256_from_digest "$digest" || true)"
+  [ -z "$hash" ] && return 1
+  printf '%s\n' "$hash"
+}
+
+verify_file_sha256() {
+  local file_path="$1"
+  local expected_sha="$2"
+  local actual_sha
+
+  actual_sha="$(sha256sum "$file_path" | awk '{print tolower($1)}')"
+  [ "$actual_sha" = "$expected_sha" ]
+}
+
+archive_uncompressed_size_bytes() {
+  local archive_path="$1"
+  unzip -l "$archive_path" \
+    | awk 'NR > 3 && $1 ~ /^[0-9]+$/ && NF >= 4 {sum += $1} END {print sum + 0}'
+}
+
+validate_archive_entries() {
+  local archive_path="$1"
+  local entry
+
+  while IFS= read -r entry; do
+    [ -z "$entry" ] && continue
+    if printf '%s\n' "$entry" | grep -Eq '(^/|\\|(^|/)\.\.(/|$))'; then
+      echo "Error: Archive contains unsafe path: $entry" >&2
+      return 1
+    fi
+  done <<EOF_ENTRIES
+$(unzip -Z -1 "$archive_path")
+EOF_ENTRIES
+}
+
+enforce_archive_limits() {
+  local archive_path="$1"
+  local uncompressed_size
+
+  uncompressed_size="$(archive_uncompressed_size_bytes "$archive_path")"
+  if [ "$uncompressed_size" -gt "$MAX_UNCOMPRESSED_BYTES" ]; then
+    echo "Error: Archive is too large when uncompressed (${uncompressed_size} bytes)." >&2
+    echo "Limit: ${MAX_UNCOMPRESSED_BYTES} bytes." >&2
+    return 1
+  fi
 }
 
 download_zip_with_cache() {
   local url="$1"
   local output_path="$2"
+  local expected_sha256="${3:-}"
   local cache_path
   local tmp_path
 
   mkdir -p "$CACHE_DIR"
+  chmod 700 "$CACHE_DIR" 2>/dev/null || true
   cache_path="${CACHE_DIR}/$(zip_name_from_url "$url")"
 
-  if [ -s "$cache_path" ] && unzip -tqq "$cache_path" >/dev/null 2>&1; then
-    log "Using cache: ${cache_path}"
-  else
-    if [ -f "$cache_path" ]; then
+  if [ "$SKIP_VERIFY" -ne 1 ] && [ -z "$expected_sha256" ]; then
+    echo "Error: No SHA256 digest available for selected asset." >&2
+    echo "If you still want to proceed, re-run with --no-verify." >&2
+    return 1
+  fi
+
+  if [ -s "$cache_path" ]; then
+    if ! unzip -tqq "$cache_path" >/dev/null 2>&1; then
       echo "Warning: Invalid cache detected. Re-downloading: ${cache_path}" >&2
       rm -f "$cache_path"
+    elif [ "$SKIP_VERIFY" -ne 1 ] && ! verify_file_sha256 "$cache_path" "$expected_sha256"; then
+      echo "Warning: Cache SHA256 mismatch. Re-downloading: ${cache_path}" >&2
+      rm -f "$cache_path"
+    else
+      log "Using cache: ${cache_path}"
     fi
+  fi
 
+  if [ ! -s "$cache_path" ]; then
     tmp_path="${cache_path}.tmp.$$"
     log "Downloading: ${url}"
-    if ! curl -fL --retry 3 --retry-delay 1 -o "$tmp_path" "$url"; then
+    if ! curl -fL --proto '=https' --tlsv1.2 --retry 3 --retry-delay 1 -o "$tmp_path" "$url"; then
       rm -f "$tmp_path"
       return 1
     fi
+
+    if ! unzip -tqq "$tmp_path" >/dev/null 2>&1; then
+      rm -f "$tmp_path"
+      echo "Error: Downloaded file is not a valid zip archive." >&2
+      return 1
+    fi
+
+    if [ "$SKIP_VERIFY" -ne 1 ] && ! verify_file_sha256 "$tmp_path" "$expected_sha256"; then
+      rm -f "$tmp_path"
+      echo "Error: SHA256 verification failed for downloaded asset." >&2
+      return 1
+    fi
+
     mv "$tmp_path" "$cache_path"
+    chmod 600 "$cache_path" 2>/dev/null || true
   fi
 
   cp -f "$cache_path" "$output_path"
@@ -673,11 +805,17 @@ main() {
   parse_args "$@"
 
   require_cmd curl
+  require_cmd jq
+  require_cmd sha256sum
   require_cmd unzip
   require_cmd find
 
   if [ ! -d "/data/data/com.termux/files/usr" ]; then
     echo "Warning: This does not look like Termux. Continuing anyway." >&2
+  fi
+
+  if [ "$SKIP_VERIFY" -eq 1 ]; then
+    echo "Warning: SHA256 verification is disabled (--no-verify)." >&2
   fi
 
   if [ "$FONT_SPECIFIED" -eq 1 ] && [ "$PRESET_SPECIFIED" -eq 1 ]; then
@@ -686,7 +824,7 @@ main() {
 
   log "Fetching latest release metadata..."
   local metadata
-  metadata="$(curl -fsSL "$API_URL")"
+  metadata="$(curl -fsSL --proto '=https' --tlsv1.2 "$API_URL")"
 
   local zip_urls
   zip_urls="$(collect_zip_urls_from_metadata "$metadata")"
@@ -694,6 +832,7 @@ main() {
     echo "Error: Could not find a zip asset in latest release" >&2
     exit 1
   fi
+  validate_zip_urls "$zip_urls"
 
   if [ "$LIST_ONLY" -eq 1 ]; then
     list_available_packages "$zip_urls"
@@ -734,15 +873,32 @@ main() {
     fi
   fi
 
+  if ! is_trusted_asset_url "$zip_url"; then
+    echo "Error: Selected asset URL is not trusted: $zip_url" >&2
+    exit 1
+  fi
+
+  local expected_sha256=""
+  if [ "$SKIP_VERIFY" -ne 1 ]; then
+    expected_sha256="$(sha256_for_asset_url "$metadata" "$zip_url" || true)"
+    if [ -z "$expected_sha256" ]; then
+      echo "Error: Could not get SHA256 digest for selected asset from release metadata." >&2
+      echo "Re-run with --no-verify to bypass verification." >&2
+      exit 1
+    fi
+  fi
+
   TMP_DIR="$(mktemp -d)"
   trap 'rm -rf "${TMP_DIR:-}"' EXIT
 
   local zip_path
   zip_path="${TMP_DIR}/font.zip"
 
-  download_zip_with_cache "$zip_url" "$zip_path"
+  download_zip_with_cache "$zip_url" "$zip_path" "$expected_sha256"
 
   log "Extracting archive..."
+  validate_archive_entries "$zip_path"
+  enforce_archive_limits "$zip_path"
   unzip -q "$zip_path" -d "$TMP_DIR/extract"
 
   local font_names
