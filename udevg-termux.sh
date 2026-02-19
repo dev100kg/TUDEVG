@@ -108,7 +108,7 @@ ensure_dependencies() {
       echo "Error: Failed to create a temporary log file for pkg output." >&2
       return 1
     fi
-    if ! pkg install -qq -y "${packages_to_install[@]}" >"${install_log}" 2>&1; then
+    if ! DEBIAN_FRONTEND=noninteractive pkg install -y "${packages_to_install[@]}" > "${install_log}" 2>&1; then
       echo "Error: Failed to install dependencies via pkg." >&2
       if [ -s "${install_log}" ]; then
         echo "---- pkg output (last 80 lines) ----" >&2
