@@ -13,7 +13,7 @@ Termux に UDEV Gothic をインストールし、`~/.termux/font.ttf` に適用
 - `--preset` で一発指定（例: `nf`, `35nflg-bold`）
 - ダウンロード済み ZIP をキャッシュ再利用（`~/.cache/udevgothic`）
 
-## まず使う
+## クイックスタート
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s
