@@ -16,28 +16,16 @@ Termux に UDEV Gothic を入れて `~/.termux/font.ttf` へ反映するイン�
 
 ## Quick Start
 
-```bash
-curl -fsSLo /tmp/udevg-termux.sh https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh
-bash /tmp/udevg-termux.sh
-```
-
-非対話で一発適用する場合:
+対話インストール
 
 ```bash
-bash /tmp/udevg-termux.sh --preset nf --yes
+curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s
 ```
 
-短縮ワンライナー（`curl | bash`, 非推奨）:
+非対話インストール例
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s -- --preset nf --yes
-```
-
-ローカル実行:
-
-```bash
-chmod +x udevg-termux.sh
-./udevg-termux.sh
 ```
 
 ## Options
