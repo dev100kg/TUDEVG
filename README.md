@@ -13,16 +13,7 @@ Termux に UDEV Gothic をインストールし、`~/.termux/font.ttf` に適用
 - `--preset` で一発指定（例: `nf`, `35nflg-bold`）
 - ダウンロード済み ZIP をキャッシュ再利用（`~/.cache/udevgothic`）
 
-## まず使う（最短）
-
-推奨:
-
-```bash
-curl -fsSLo /tmp/udevg-termux.sh https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh
-bash /tmp/udevg-termux.sh
-```
-
-簡易ワンライナー（`curl | bash`）:
+## まず使う
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s
@@ -30,35 +21,16 @@ curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.s
 
 ## 目的別の使い方
 
-非対話で即適用したい:
-
-```bash
-bash /tmp/udevg-termux.sh --preset nf --yes
-```
-
-`curl | bash` で非対話実行:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s -- --preset nf --yes
-```
-
 利用可能なパッケージや preset 例を確認したい:
 
 ```bash
-bash /tmp/udevg-termux.sh --list
+curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s -- --list
 ```
 
-特定のフォント名を直接指定したい:
+非対話実行:
 
 ```bash
-bash /tmp/udevg-termux.sh --font UDEVGothic35HS-Regular.ttf --yes
-```
-
-ローカルのスクリプトを実行する:
-
-```bash
-chmod +x udevg-termux.sh
-./udevg-termux.sh
+curl -fsSL https://raw.githubusercontent.com/dev100kg/TUDEVG/main/udevg-termux.sh | bash -s -- --preset nf --yes
 ```
 
 ## preset の書き方
