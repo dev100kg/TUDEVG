@@ -103,7 +103,7 @@ ensure_dependencies() {
 
     log "Missing dependencies detected: ${missing_cmds[*]}"
     log "Installing packages: ${packages_to_install[*]}"
-    if ! pkg install -y "${packages_to_install[@]}"; then
+    if ! pkg install -qq -y "${packages_to_install[@]}"; then
       echo "Error: Failed to install dependencies via pkg." >&2
       return 1
     fi
