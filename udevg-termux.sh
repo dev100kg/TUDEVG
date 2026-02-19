@@ -103,10 +103,22 @@ ensure_dependencies() {
 
     log "Missing dependencies detected: ${missing_cmds[*]}"
     log "Installing packages: ${packages_to_install[*]}"
-    if ! pkg install -qq -y "${packages_to_install[@]}"; then
-      echo "Error: Failed to install dependencies via pkg." >&2
+    local install_log=""
+    if ! install_log="$(mktemp "${TMPDIR:-/tmp}/udevg-pkg-install.XXXXXX.log")"; then
+      echo "Error: Failed to create a temporary log file for pkg output." >&2
       return 1
     fi
+    if ! pkg install -qq -y "${packages_to_install[@]}" >"${install_log}" 2>&1; then
+      echo "Error: Failed to install dependencies via pkg." >&2
+      if [ -s "${install_log}" ]; then
+        echo "---- pkg output (last 80 lines) ----" >&2
+        tail -n 80 "${install_log}" >&2 || true
+        echo "------------------------------------" >&2
+      fi
+      rm -f "${install_log}"
+      return 1
+    fi
+    rm -f "${install_log}"
 
     for cmd in "${missing_cmds[@]}"; do
       if ! command -v "$cmd" >/dev/null 2>&1; then
