@@ -2,7 +2,7 @@
 
 Termux に UDEV Gothic をインストールし、`~/.termux/font.ttf` に適用するスクリプトです。
 
-![Demo Screenshot](assets/termux-demo.svg)
+![Demo Screenshot](assets/termux-demo.png)
 
 ## このスクリプトでできること
 
