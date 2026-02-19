@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="70" y="70" width="1060" height="580" rx="16" fill="#0b0f17" stroke="#334155" stroke-width="2"/>
+  <rect x="70" y="70" width="1060" height="44" rx="16" fill="#111827"/>
+  <circle cx="98" cy="92" r="7" fill="#ef4444"/>
+  <circle cx="122" cy="92" r="7" fill="#f59e0b"/>
+  <circle cx="146" cy="92" r="7" fill="#22c55e"/>
+  <text x="178" y="98" fill="#93c5fd" font-family="monospace" font-size="18">Termux - UDEV Gothic Installer</text>
+
+  <text x="98" y="160" fill="#86efac" font-family="monospace" font-size="22">$ ./install-udevgothic-termux.sh</text>
+  <text x="98" y="198" fill="#cbd5e1" font-family="monospace" font-size="20">[*] Fetching latest release metadata...</text>
+  <text x="98" y="236" fill="#cbd5e1" font-family="monospace" font-size="20">Available variants:</text>
+  <text x="98" y="272" fill="#cbd5e1" font-family="monospace" font-size="20">  1) HS</text>
+  <text x="98" y="304" fill="#cbd5e1" font-family="monospace" font-size="20">  2) NF</text>
+  <text x="98" y="336" fill="#cbd5e1" font-family="monospace" font-size="20">  3) standard (default)</text>
+  <text x="98" y="374" fill="#facc15" font-family="monospace" font-size="20">Select variant number: 2</text>
+  <text x="98" y="412" fill="#cbd5e1" font-family="monospace" font-size="20">Choose size: normal (default)</text>
+  <text x="98" y="450" fill="#cbd5e1" font-family="monospace" font-size="20">Choose width: LG</text>
+  <text x="98" y="488" fill="#cbd5e1" font-family="monospace" font-size="20">Choose style: Regular (default)</text>
+  <text x="98" y="526" fill="#22d3ee" font-family="monospace" font-size="20">Install UDEVGothicNFLG-Regular.ttf to ~/.termux/font.ttf? [y/N]: y</text>
+  <text x="98" y="564" fill="#cbd5e1" font-family="monospace" font-size="20">[*] Applied font and reloaded Termux settings.</text>
+  <text x="98" y="602" fill="#4ade80" font-family="monospace" font-size="20">[*] Done. Active font: UDEVGothicNFLG-Regular.ttf</text>
+</svg>
